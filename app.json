@@ -1,26 +1,32 @@
 {
   "expo": {
-    "name": "Mobiledev",
-    "slug": "Mobiledev",
+    "name": "mobiledev",
+    "slug": "mobiledev",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
+    "scheme": "com.mobiledev",
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
     "updates": {
-      "fallbackToCacheTimeout": 0
+      "fallbackToCacheTimeout": 0,
+      "url": "https://u.expo.dev/f2c4413d-2146-47b0-9da1-59b04bcd6299"
     },
     "assetBundlePatterns": [
       "**/*"
     ],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.mobiledev"
     },
     "android": {
+      "package": "com.mobiledev",
+      "versionCode": 1,
+      "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#FFFFFF"
@@ -28,6 +34,15 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "f2c4413d-2146-47b0-9da1-59b04bcd6299"
+      }
+    },
+    "owner": "zekis",
+    "runtimeVersion": {
+      "policy": "sdkVersion"
     }
   }
 }

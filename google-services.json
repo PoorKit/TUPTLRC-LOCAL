@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "55235832534",
+    "project_id": "tuplibrary",
+    "storage_bucket": "tuplibrary.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:55235832534:android:1caece34eaa9f6b32ab777",
+        "android_client_info": {
+          "package_name": "com.mobiledev"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "55235832534-62h7vp322elge4s6b66ahbr2bfm52fm2.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAcrzAju8n5f8yngk-Fi-7K_z13uqL8-EI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "55235832534-1b8168vcmf56ltd3i1lrtagstfcrehm9.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
