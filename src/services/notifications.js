@@ -7,7 +7,6 @@ Notifications.setNotificationHandler({
     shouldSetBadge: true,
   }),
 });
-
 // Request permissions for notifications
 export const registerForPushNotificationsAsync = async() => {
   try{
@@ -22,6 +21,8 @@ export const registerForPushNotificationsAsync = async() => {
       return;
     }
     const token = (await Notifications.getExpoPushTokenAsync()).data;
+    console.log(token);r
+    return token;
   }catch(error){
     console.log(error);
   }

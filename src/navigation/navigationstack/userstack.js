@@ -10,33 +10,67 @@ import Detailspage from '../../components/pages/user/detailspage';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useNavigation } from '@react-navigation/native';
 import { Image, StyleSheet, TouchableOpacity, View } from 'react-native';
-import { Text, Avatar, Menu, Badge, IconButton} from 'react-native-paper';
+import { Text, Avatar, Menu, Badge, IconButton, Portal} from 'react-native-paper';
 
 import AuthContext from '../../models/auth';
 import UserContext from '../../models/user';
 import BorrowsContext from '../../models/borrow';
 import NotificationsModel from '../../models/notification';
 import { observer } from 'mobx-react';
+import PenaltyContext from '../../models/penalty';
+import BooksContext from '../../models/books';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import Loading from '../../components/pages/loading';
 
 
 const UserStacks = observer(()=>{
     const AuthStore = useContext(AuthContext);
     const UserStore = useContext(UserContext);
+    const BookStore = useContext(BooksContext);
     const BorrowStore = useContext(BorrowsContext);
-    console.log(BorrowStore.AllBorrows.length);
     const NotificationsStore = useContext(NotificationsModel);
-    
-    const signOut = () => {
+    const PenaltyStore = useContext(PenaltyContext);
+    const navigation = useNavigation();
+
+    const signOut = async() => {
+        await AsyncStorage.clear();
         AuthStore.logout();
         UserStore.emptyout();
+        BorrowStore.emptyout();
+        NotificationsStore.emptyout();
+        PenaltyStore.emptyout();
         alert("Logged Out Successfully");
     }
 
-    const navigation = useNavigation();
+    useEffect(()=>{
+        AuthStore.letmeload();
+        BookStore.fetchBooksModel(); 
+        BorrowStore.fetchBorrows(UserStore.currentuser._id);
+        PenaltyStore.fetchUserPenalty(UserStore.currentuser._id);
+        NotificationsStore.fetchCurrentNotifications();
+        AuthStore.donewithload();
+    },[])
+    
+    useEffect(()=>{
+        AuthStore.letmeload();
+        if(PenaltyStore.userPenalty?.status === "Unpaid"){
+            AuthStore.donewithload();
+            navigation.navigate('Penalty');
+        }
+        AuthStore.donewithload();
+    },[PenaltyStore.userPenalty]);
+
     const [visibility,setVisibility] = useState(false);
+    const activenotificationcount = activenotificationcount;
+    const borrowcount = BorrowStore.bookId.length;
     const UsersNavigationStack = createBottomTabNavigator();
     return (
-        <UsersNavigationStack.Navigator initialRouteName='Home' 
+        <>
+        <Portal>
+            <Loading/>
+        </Portal>
+        <UsersNavigationStack.Navigator 
+        initialRouteName= 'Home'
         screenOptions={{
             headerStyle:{
                 backgroundColor: 'maroon',
@@ -47,8 +81,8 @@ const UserStacks = observer(()=>{
             <TouchableOpacity style={{marginRight:15}} onPress={()=>navigation.navigate('Cart')}>
             {
                 // NotificationsStore.notifications and filter where deliverystatus = "delivered" and get its length()
-                NotificationsStore.notifications?.filter(notification => notification.deliveryStatus === "Delivered").length > 0 ?
-                <Badge style={{fontSize:15, marginBottom:-25, zIndex:1, backgroundColor:'mistyrose', color:'black', fontWeight:'bold'}}>{NotificationsStore.notifications?.filter(notification => notification.deliveryStatus === "Delivered").length}</Badge>
+                activenotificationcount > 0 ?
+                <Badge style={{fontSize:15, marginBottom:-25, zIndex:1, backgroundColor:'mistyrose', color:'black', fontWeight:'bold'}}>{activenotificationcount}</Badge>
                 :
                 <></>
             }
@@ -74,7 +108,7 @@ const UserStacks = observer(()=>{
         <UsersNavigationStack.Group screenOptions={{
             headerRight: () => 
             <TouchableOpacity style={{marginRight:15}} onPress={()=>navigation.navigate('Cart')}>
-            <Badge style={{fontSize:15, marginBottom:-25, zIndex:1, backgroundColor:'mistyrose', color:'black', fontWeight:'bold'}}>{BorrowStore.AllBorrows.bookId.length}</Badge>
+            <Badge style={{fontSize:15, marginBottom:-25, zIndex:1, backgroundColor:'mistyrose', color:'black', fontWeight:'bold'}}>{borrowcount}</Badge>
             <IconButton icon='cart-outline' size={30} iconColor='white' onPress={() => {navigation.navigate('Cart')}} />
             </TouchableOpacity>
         }}>
@@ -114,7 +148,7 @@ const UserStacks = observer(()=>{
                     anchor={
                         <TouchableOpacity style={{marginRight:25}} onPress={()=>setVisibility(true)}>
                         {
-                            NotificationsStore.notifications?.filter(notification => notification.deliveryStatus === "Delivered").length > 0 ?
+                            activenotificationcount > 0 ?
                             <Badge visible={!visibility} style={{fontSize:15, marginBottom:-15, marginRight:-8,zIndex:1,backgroundColor:'slategray', fontWeight:'bold'}}>{NotificationsStore.notifications.filter(notification => notification.deliveryStatus === "Delivered").length}</Badge>
                             :
                             <></>
@@ -123,7 +157,7 @@ const UserStacks = observer(()=>{
                         </TouchableOpacity>
                     }>
                     {
-                        NotificationsStore.notifications?.filter(notification => notification.deliveryStatus === "Delivered").length > 0 ? 
+                        activenotificationcount > 0 ? 
                         <Badge style={{marginBottom:-25,marginRight:5, fontWeight:'bold',fontSize:15}}>{NotificationsStore.notifications.filter(notification => notification.deliveryStatus === "Delivered").length}</Badge>
                         : <></>
                     }
@@ -164,7 +198,7 @@ const UserStacks = observer(()=>{
                 <UsersNavigationStack.Screen name="Penalty" component={Penalty} options={{
                     tabBarItemStyle: { display: 'none' },
                     tabBarStyle: { display: 'none' }, 
-                    headerLeft: () => <IconButton icon='chevron-left-circle-outline' size={30} iconColor='white' onPress={() => {navigation.navigate('Home')}} />,
+                    headerShown: false,
                 }}/>
                 </UsersNavigationStack.Group>
                 {/* CART */}
@@ -181,26 +215,26 @@ const UserStacks = observer(()=>{
                         headerTitleAlign: 'center',
                         headerLeft: () => <IconButton icon='chevron-left-circle-outline' size={30} iconColor='white' onPress={() => {navigation.goBack()}} />,
                     }}/>
-                    </UsersNavigationStack.Group>
-                    </UsersNavigationStack.Navigator>
-                    )
-                })
+        </UsersNavigationStack.Group>
+        </UsersNavigationStack.Navigator>
+        </>
+        )
+    })
                 
-                export default UserStacks;
-                
-                const styles=StyleSheet.create({
-                    imageContainer:{
-                        height: 40,
-                        width: 40,
-                    },
-                    appnamecontainer:{
-                        flexDirection: 'row'
-                    },
-                    appnamestyling:{
-                        color: 'white',
-                        fontWeight: 'bold',
-                        marginLeft: 10,
-                    }
-                    
-                })
-                
+export default UserStacks;
+
+const styles=StyleSheet.create({
+    imageContainer:{
+        height: 40,
+        width: 40,
+    },
+    appnamecontainer:{
+        flexDirection: 'row'
+    },
+    appnamestyling:{
+        color: 'white',
+        fontWeight: 'bold',
+        marginLeft: 10,
+    }
+    
+})

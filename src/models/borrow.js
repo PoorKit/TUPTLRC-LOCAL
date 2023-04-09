@@ -1,13 +1,25 @@
 import { types, flow, applySnapshot} from "mobx-state-tree";
 import { createContext} from 'react';
 import { borrowBook, cancelAllborrowBook, cancelborrowBook, confirmRequest, fetchBorrow } from "../services/api";
+import { book_image_default } from "../services/constants";
 import dayjs from "dayjs";
+
+const BookImage = types.model({
+    public_id: types.maybeNull(types.string),
+    url: types.optional(types.string, book_image_default),
+  });
+
+const Book = types.model("Book", {
+    _id: types.string,
+    book_image: BookImage,
+    title: types.string,
+})
 
 const Borrows = types
 .model('Borrows',{
     // IGNORED safeReferences to userID and BookID REASON: NOT GONNA BOTHER DEBUGGING
     userId: types.maybeNull(types.string),
-    bookId: types.optional(types.array(types.string),[]),
+    bookId: types.optional(types.array(Book),[]),
     accession: types.maybeNull(types.string),
     appointmentDate: types.maybeNull(types.Date),
     dueDate: types.maybeNull(types.Date),
@@ -15,41 +27,55 @@ const Borrows = types
 })
 .actions(self => ({
     // Using the FetchBorrow from the api.js file generate the flow structure for populating borrows
-    fetchBorrows: flow(function* (userId){
+    fetchBorrows: flow(function* (){
         try{
-            const response = yield fetchBorrow(userId);
-            response.appointmentDate = new Date(response.appointmentDate);
-            response.dueDate = new Date(response.dueDate);
-            applySnapshot(self,response);
-            console.log(self);
+            const response = yield fetchBorrow();
+            if(response){
+                response.appointmentDate = new Date(response.appointmentDate);
+                response.dueDate = new Date(response.dueDate);
+                applySnapshot(self,response);
+            }
         }catch(error){
             console.log(error);
         }
     }),
-    async borrowbook(userId,bookId,BooksStore){
+    // create a function that would set all the values inside the borrow object to undefined or null depending on their type
+    emptyout: flow(function*() {
+        applySnapshot(self, {
+            userId: undefined,
+            bookId: undefined,
+            accession: undefined,
+            appointmentDate: undefined,
+            dueDate: undefined,
+            status: undefined,
+        });
+    }),
+    async borrowbook(userId,bookId,BookStore){
         if(self.bookId?.length < 2 || !self.bookId.includes(bookId)){
             const response = await borrowBook(userId,bookId);
-            response.appointmentDate = new Date(response.appointmentDate);
-            response.dueDate = new Date(response.dueDate);
-            this.addbookevent(response,bookId,BooksStore);
+            if(response.success){
+                this.addbookevent(bookId,BookStore);
+            }
         }else{
             console.log("Error Occured");
         }
     },
-    addbookevent(response,bookId,BooksStore){
-        BooksStore.takeoutone(bookId);
-        applySnapshot(self,response);
-        console.log(self);
+    addbookevent(bookId,BookStore){
+        BookStore.takeoutone(bookId._id);
+        // /default-book_p70mge.png
+        const newImage = BookImage.create({
+                public_id: bookId.book_image?._id || null,
+                url: bookId.book_image?.url || book_image_default,
+            })
+        const newBook = Book.create({
+            _id: bookId._id,
+            book_image: newImage,
+            title: bookId.title,
+        });
+        self.bookId.push(newBook);
     },
     setschedule(appointmentDate){
         self.appointmentDate = dayjs(appointmentDate).toDate();
-        // Condition for Weekends;
-        // if(dayjs(appointmentDate).add(1,'day').day === 1 || dayjs(appointmentDate).add(1,'day').day === 0 ){
-        //     self.dueDate = dayjs(appointmentDate).add(3,'day').toDate();
-        // }else{
-        //     self.dueDate = dayjs(appointmentDate).add(1, 'day').toDate();
-        // }
-        // Made redundant in App Proper, in Backend
         self.dueDate = dayjs(appointmentDate).add(1, 'day').toDate();
         this.setconfirm();
     },
@@ -57,7 +83,6 @@ const Borrows = types
         self.status = "Pending";
         try{
             const response = await confirmRequest(self.userId,self.appointmentDate,self.dueDate);
-            console.log(response);
         }catch(error){
             console.log(error);
         }
@@ -66,32 +91,35 @@ const Borrows = types
     async cancelall(BooksStore){
         // add for loop for the bookId array and call bookstore.returnoutone(bookId)
         self.bookId.forEach(element => {
-            BooksStore.returnoutone(element);
+            BooksStore.returnoutone(element._id);
         });
         try{
             const response = await cancelAllborrowBook(self.userId);
-            console.log(response);
         }catch(error){
             console.log(error);
         }
         applySnapshot(self,{});
     },
     async cancelbook(bookId,BookStore){
-        const response = await cancelborrowBook(self.userId,bookId);
-        console.log(response);
+        const response = await cancelborrowBook(self.userId,bookId._id);
         if (response.success){
-            this.removeitem(bookId,BookStore);
-            console.log(self);
+            this.removeitem(bookId._id,BookStore);
+            alert("Book cancelled successfully!");
+            console.log("WOW!");
+            console.log(self.bookId);
         }else{
-            console.log("Error Occured");
+            alert("Error occured while cancelling book");
         }
     },
     removeitem(bookId,BooksStore){
-        self.bookId.remove(bookId);
+        const index = self.bookId.findIndex((book) => book._id === bookId);
+        if (index !== -1) {
+            self.bookId.splice(index, 1);
+          }
+        BooksStore.returnoutone(bookId);
         self.dueDate = null;
         self.appointmentDate = null;
         self.status = "To Confirm";
-        BooksStore.returnoutone(bookId);
     }
 }))
 .views(self => ({

@@ -18,7 +18,6 @@ import UserContext from "../../../models/user";
 import BorrowsContext from '../../../models/borrow';
 import NotificationsModel from '../../../models/notification';
 import BooksContext from "../../../models/books";
-
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from "@react-navigation/native";
 
@@ -29,25 +28,68 @@ export default Login = observer(() => {
     const BorrowStore = useContext(BorrowsContext);
     const NotificationsStore = useContext(NotificationsModel);
     const BooksStore = useContext(BooksContext);
+
+    // Check if user data is stored in AsyncStorage on app load
+    async function checkUserData() {
+        const email = await AsyncStorage.getItem('email');
+        const password = await AsyncStorage.getItem('password');
     
+        if (email && password) {
+            // User data is stored in AsyncStorage, log in the user
+            try{
+                const response = await loginasync(email,password);
+                AuthStore.donewithload();
+                console.log(response);
+                if(response.success === false){
+                    navigation.navigate('Capture', response.message);
+                }
+                switch(response.user.status){
+                    case 'fresh':
+                        alert("You need to login through your google account!");
+                        break;
+                    case 'active':
+                        UserStore.setUser(response);
+                        NotificationsStore.fetchCurrentNotifications(UserStore.currentuser._id);
+                        BorrowStore.fetchBorrows(UserStore.currentuser._id);
+                        BooksStore.fetchBooksModel();
+                        AuthStore.loggedin(response.token);
+                        alert("You have successfully logged in!");
+                        break;
+                }
+            }catch(err){
+                setemailinputerror(!emailinputerror);
+                setpasswordinputerror(!passwordinputerror);
+                alert("Invalid Credentials")
+                console.log(err);
+            }
+        }
+    }
+    checkUserData();
+
     const navigation = useNavigation();
     const handlesubmit = async() => {
         try{
             const response = await loginasync(email,password);
+            AuthStore.donewithload();
+            if(response.success === false){
+                navigation.navigate('Capture', response.message);
+                setemailinputerror(!emailinputerror);
+                setpasswordinputerror(!passwordinputerror);
+                return;
+            }
             switch(response.user.status){
-                case 'deactivated':
-                    navigation.navigate('Capture');
-                    break;
                 case 'fresh':
                     alert("You need to login through your google account!");
                     break;
                 case 'active':
+                    await AsyncStorage.setItem('email', email);
+                    await AsyncStorage.setItem('password', password);
                     UserStore.setUser(response);
                     NotificationsStore.fetchCurrentNotifications(UserStore.currentuser._id);
                     BorrowStore.fetchBorrows(UserStore.currentuser._id);
                     BooksStore.fetchBooksModel();
                     AuthStore.loggedin(response.token);
-                    alert("Login Successful!");
+                    alert("You have successfully logged in!");
                     break;
             }
         }catch(err){
@@ -74,17 +116,23 @@ export default Login = observer(() => {
                 try{
                     const currentuser = await signInWithCredential(auth, credential);
                     const serverresponse = await googleloginasync(currentuser._tokenResponse);
-                    AuthStore.donewithload();
+                    if(serverresponse === undefined){
+                        AuthStore.donewithload();
+                        alert("An Error has occured with the server, please try again later!");
+                    }
                     if(serverresponse.success){
                         switch (serverresponse.user.status){
                             case 'deactivated':
+                                AuthStore.donewithload();
                                 navigation.navigate('Capture');
                                 break;
                             case 'fresh':
+                                AuthStore.donewithload();
                                 UserStore.setUser(serverresponse);
                                 navigation.navigate('Register',{token: id_token});
                                 break;
                             case 'active':
+                                AuthStore.donewithload();
                                 UserStore.setUser(serverresponse);
                                 NotificationsStore.fetchCurrentNotifications(UserStore.currentuser._id);
                                 BorrowStore.fetchBorrows(UserStore.currentuser._id);
@@ -114,9 +162,10 @@ export default Login = observer(() => {
     return (
         <KeyboardAwareScrollView contentContainerStyle={styles.container}>
         <LoadingScreen/>
-        <View>
+        <View style={{maxWidth:300}}>
         <Image style={styles.imagecontainer} source={require('../../../../assets/icon.png')}/>
-        <Text style={styles.welcome}>Library Center</Text>
+        <Text style={styles.welcome}>TUP-T</Text>
+        <Text style={styles.welcome}>Learning Resource Center</Text>
         <TextInput 
         style={styles.loginput} 
         mode='outlined' 
@@ -126,9 +175,11 @@ export default Login = observer(() => {
         error={emailinputerror}
         onChangeText={(text) => setEmail(text)}
         />
-        <HelperText type="error" visible={emailinputerror}>
-        Email address doesn't exist or wrong email spelling!
-        </HelperText>
+        {
+            emailinputerror && <HelperText type="error" visible={emailinputerror}>
+            Email address doesn't exist or wrong email spelling!
+            </HelperText>
+        }
         <TextInput 
         style={styles.passinput} 
         mode='outlined' 
@@ -142,14 +193,17 @@ export default Login = observer(() => {
             icon='eye' 
             onPress={()=>toggleshowpass(!showpass)}/>}
             />
-            <HelperText type="error" visible={passwordinputerror}>
+        {
+            passwordinputerror && <HelperText type="error" visible={passwordinputerror}>
             Check your spelling!
             </HelperText>
+        }
             <Button 
+            style={{marginTop:10}}
             icon="login" 
             mode="contained" 
             buttonColor="maroon"
-            onPress={()=>handlesubmit()}>
+            onPress={()=>{handlesubmit(),AuthStore.letmeload()}}>
             Login!
             </Button>
             <Text style={styles.instruction}>Or you can try Logging in through your {'\n'}Google Account</Text>
@@ -175,12 +229,13 @@ export default Login = observer(() => {
                 backgroundColor: "mistyrose",
             },
             imagecontainer:{
+                marginTop:20,
                 height: 120,
                 width: 120,
                 alignSelf: 'center',
             },
             welcome: {
-                fontSize: 30,
+                fontSize: 28,
                 textAlign: "center",
                 margin: 10,
                 fontWeight: "bold"
@@ -193,9 +248,11 @@ export default Login = observer(() => {
             },
             loginput: {
                 width: 300,
+                alignSelf:'center',
             },
             passinput: {
                 width: 300,
+                alignSelf:'center',
             },
             googleloginbutton:{
                 backgroundColor:'white',

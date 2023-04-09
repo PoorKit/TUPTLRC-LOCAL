@@ -30,18 +30,9 @@ export default Register = observer(({ route, navigation })=>{
 
 
     // Step 1 to Step 2
-    const [code,setCode] = useState();
-    async function verifycodehandler(){
-        try{
-            if(UserStore.currentuser.secretcode === code){
-                setstep1(false);
-                setstep2(true);
-            }else{
-                alert("Invalid Code");
-            }
-        }catch(error){
-            console.log(error);
-        }
+    function step1tostep2() {
+        setstep1(false);
+        setstep2(true);
     }
     // Step 2 to Step 3
     const [IDVALUE, setIDVALUE ] = useState();
@@ -92,24 +83,10 @@ export default Register = observer(({ route, navigation })=>{
             <Text variant="displaySmall" style={styles.TextContent}> Welcome!</Text>
             <Text variant="titleLarge" style={styles.TextContent}>{UserStore.currentuser.name}</Text>
             <Text variant="bodyMedium" style={styles.TextContent}>Thank you for registering through the mobile app</Text>
-            <Text variant="bodyMedium" style={styles.TextContent}>Before we get started, There are some information we would like to get from you</Text>
+            <Text variant="bodyMedium" style={styles.TextContent}>Before you start using the mobile app!</Text>
             </View>
             <View>
-            <Text variant="bodyLarge">We need to confirm your email first!</Text>
-            <TextInput
-            mode="outlined"
-            label="Code"
-            right={<TextInput.Icon
-                icon='email-sync'
-                onPress={()=>{alert("New Code Sent")}}
-                />
-            }
-            onChangeText={(text)=>{setCode(text)}}
-            />
-            <HelperText type='info'>
-            We've sent a code to your email address.
-            </HelperText>
-            <Button mode="contained" buttonColor="maroon" textColor="white" icon="check" onPress={()=>{verifycodehandler()}}>Submit</Button>
+                <Button mode="contained" buttonColor="maroon" textColor="white" icon="check" onPress={()=>{step1tostep2()}}>Understood</Button>
             </View>
             </>:
             // {/* INFORMATION PROPER */}

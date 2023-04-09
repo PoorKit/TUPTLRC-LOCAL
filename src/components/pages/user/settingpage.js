@@ -10,6 +10,7 @@ import * as Notifications from 'expo-notifications';
 import { registerForPushNotificationsAsync } from '../../../services/notifications';
 import { registerNotification, unregisterNotification, updateUserInformation, updateUserPassword } from '../../../services/api';
 
+import Loading from '../loading';
 import AuthContext from '../../../models/auth';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 
@@ -19,7 +20,9 @@ export default Settings = observer(() => {
     
     // Inline this code with Notifications Models if Possible
     let devicepushtoken;
+    let isSameToken;
     async function setdeviceasdefault(){
+        AuthStore.letmeload();
         try{
             if (Device.isDevice) {
                 const { status: existingStatus } = await Notifications.getPermissionsAsync();
@@ -45,8 +48,10 @@ export default Settings = observer(() => {
         }catch(error){
             console.log(error);
         }
+        AuthStore.donewithload();
     };
     function unsubscribetonotifcations(){
+        AuthStore.letmeload();
         try{
             alert("Unsubscribed to Notifications")
             UserStore.setnotification('');
@@ -54,10 +59,15 @@ export default Settings = observer(() => {
         }catch(error){
             console.log(error);
         }
+        AuthStore.donewithload();
     }
     useEffect(() => {
         try{
-            devicepushtoken = registerForPushNotificationsAsync();
+            async function getdevicetoken(){
+                devicepushtoken = await registerForPushNotificationsAsync();
+                isSameToken = (UserStore.currentuser.notification?.pushToken !== null || UserStore.currentuser.notification?.pushToken !== undefined) && UserStore.currentuser.notification?.pushToken !== devicepushtoken;
+            }
+            getdevicetoken();
         }catch(error){
             console.log(error);
         }
@@ -78,7 +88,7 @@ export default Settings = observer(() => {
     }
     
     const [CourseSectionIDModalvisibility,setCourseSectionIDModalvisibility] = useState(false);
-    const [ContactVisibility, setContactVisibility] = useState(false);
+    const [PersonalVisibility, setPersonalVisibility] = useState(false);
     const [PasswordVisibility, setPasswordVisibility] = useState(false);
     
     const [password1,setpassword1] = useState('');
@@ -88,6 +98,7 @@ export default Settings = observer(() => {
     const [helperpasswordvisibility, sethelperpasswordvisibility] = useState(false);
     
     async function passwordhandler(){
+        AuthStore.letmeload();
         try{
             const response = await updateUserPassword(UserStore.currentuser._id,{password1: password1,password2: password2});
             if(!response){
@@ -99,9 +110,11 @@ export default Settings = observer(() => {
         }catch(error){
             alert("Internal Error Occured");
         }
+        AuthStore.donewithload();
     }
     
     function deactivateaccount(){
+        AuthStore.letmeload();
         try{
             alert("Are you sure you want to deactivate your account?");
             const response = deactivateaccount(UserStore.currentuser._id);
@@ -116,15 +129,17 @@ export default Settings = observer(() => {
         }catch(error){
             console.log(error);
         }
+        AuthStore.donewithload();
     }
     
     return (
         <>
-        
         <ImageBackground style={styles.imagebackground} source={require('../../../../assets/hexBg.jpg')} resizeMode="cover">
         <Portal>
+        <Loading/>
         {/* DIALOG FOR STUDENT INFO */}
-        <Dialog visible={CourseSectionIDModalvisibility} onDismiss={()=>{updateUserInformation(UserStore.currentuser._id,{course: UserStore.currentuser.course,section: UserStore.currentuser.section,id_number:UserStore.currentuser.id_number}),setCourseSectionIDModalvisibility(false)}} style={{backgroundColor:'white'}}>
+        <Dialog visible={CourseSectionIDModalvisibility} onDismiss={()=>{updateUserInformation(UserStore.currentuser._id,UserStore.currentuser),setCourseSectionIDModalvisibility(false)}} style={{backgroundColor:'white'}}>
+        {/* <Dialog visible={CourseSectionIDModalvisibility} onDismiss={()=>{updateUserInformation(UserStore.currentuser._id,{course: UserStore.currentuser.course,section: UserStore.currentuser.section,id_number:UserStore.currentuser.id_number}),setCourseSectionIDModalvisibility(false)}} style={{backgroundColor:'white'}}></Dialog> */}
         <Dialog.Title style={{fontWeight:'bold',color:'maroon',textAlign:'center'}}>Profile Information</Dialog.Title>
         <Dialog.Content>
         {/* DISABLED INPUT FOR COURSE */}
@@ -168,9 +183,9 @@ export default Settings = observer(() => {
         />
         </Dialog.Content>
         </Dialog>
-        {/* DIALOG FOR CONTACT INFO */}
-        <Dialog visible={ContactVisibility} onDismiss={()=>{updateUserInformation(UserStore.currentuser._id,{contact: UserStore.currentuser.contact}),setContactVisibility(false)}} style={{backgroundColor:'white'}}>
-        <Dialog.Title style={{fontWeight:'bold',color:'maroon',textAlign:'center'}}>Contact Information</Dialog.Title>
+        {/* DIALOG FOR Personal INFO */}
+        <Dialog visible={PersonalVisibility} onDismiss={()=>{updateUserInformation(UserStore.currentuser._id,{contact: UserStore.currentuser.contact}),setPersonalVisibility(false)}} style={{backgroundColor:'white'}}>
+        <Dialog.Title style={{fontWeight:'bold',color:'maroon',textAlign:'center'}}>Personal Information</Dialog.Title>
         <Dialog.Content>
         <TextInput
         mode='outlined'
@@ -183,7 +198,7 @@ export default Settings = observer(() => {
         }}
         maxLength={10}
         onSubmitEditing={() => {
-            updateUserInformation(UserStore.currentuser._id,{contact: UserStore.currentuser.contact}),setContactVisibility(false)
+            updateUserInformation(UserStore.currentuser._id,{Personal: UserStore.currentuser.contact}),setPersonalVisibility(false)
         }}
         />
         <HelperText type="info" padding='none'>
@@ -238,6 +253,7 @@ export default Settings = observer(() => {
         </Dialog.Actions>
         </Dialog>
         </Portal>
+        
         <View style={styles.container}>
         <View style={{flex:1, alignItems:'center',justifyContent:'center'}}>
         <Image style={{width:100,height:100,borderRadius:50}} source={{uri: UserStore.currentuser.avatar.url}}/>
@@ -338,13 +354,13 @@ export default Settings = observer(() => {
             onPress={()=>setCourseSectionIDModalvisibility(true)}
             />
             </View>
-            {/* VIEW FOR CONTACT INFORMATION */}
+            {/* VIEW FOR Personal INFORMATION */}
             <View style={{flexDirection:'row'}}>
-            <IconButton style={{flex:1,alignSelf:'center'}} size={30} iconColor='dimgrey'icon="phone-dial-outline"/> 
+            <IconButton style={{flex:1,alignSelf:'center'}} size={30} iconColor='dimgrey'icon="account-outline"/> 
             <View style={{flex:2, alignSelf:'center'}}>
             <Text style={{justifyContent:'center',alignSelf:'center', textAlign:'center'}}>
             {UserStore.currentuser.contact === 0 ?
-                "No contact information"
+                "No Personal information"
                 :
                 UserStore.currentuser.contact
             }
@@ -360,7 +376,7 @@ export default Settings = observer(() => {
             iconColor='white' 
             containerColor='maroon' 
             icon="pencil"
-            onPress={()=>setContactVisibility(true)}
+            onPress={()=>setPersonalVisibility(true)}
             />
             
             </View>
@@ -411,8 +427,8 @@ export default Settings = observer(() => {
             <View style={{flex:2, alignSelf:'center'}}>
             <Text style={{justifyContent:'center',alignSelf:'center', textAlign:'center'}}>
             {
-                UserStore.currentuser.notification?.pushToken !== null || UserStore.currentuser.notification?.pushToken !== undefined ?
-                'Unsubscribe to Notifcations?'
+                isSameToken ?
+                'Unsubscribe to Notifications?'
                 :
                 'Subscribe to Notifications?'
             }

@@ -8,19 +8,20 @@ import { useNavigation } from '@react-navigation/native';
 
 import BookContext from '../../../models/books';
 import BorrowContext from '../../../models/borrow';
-import UserContext from '../../../models/user';
+import AuthContext from '../../../models/auth';
+import Loading from '../loading';
 
 const Cartpage = observer(() => {
     const BorrowStore = useContext(BorrowContext);
     const BooksStore = useContext(BookContext);
-    const UserStore = useContext(UserContext);
-    BorrowStore.fetchBorrows(UserStore.currentuser._id);
+    const AuthStore = useContext(AuthContext);
     const navigation = useNavigation();
     const [DatepickerVisibility, setDatepickerVisibility] = useState(false);
     const [validdate, setvaliddate] = useState();
     const today = getToday();
     return (
         <>
+        <Loading/>
         <ImageBackground style={styles.imagebackground} source={require('../../../../assets/hexBg.jpg')} resizeMode="cover">
         <View style={styles.container}>
         <Portal>
@@ -52,7 +53,7 @@ const Cartpage = observer(() => {
         <Dialog.Actions>
         <SegmentedButtons
         value=''
-        onValueChange={(value)=>console.log(value)}
+        onValueChange={() => {}}
         buttons={[
             {
                 value:"btn1",
@@ -80,11 +81,11 @@ const Cartpage = observer(() => {
             <Card key={item._id} style={{marginTop:10}}>
             <Card.Content style={{flexDirection:'row'}}>
             <View style={{flex:1}}>
-            <Image style={{width:100, height:150, alignSelf:'center',borderRadius:10}} source={{uri:BooksStore.GetBookDetails(item).book_image.url}}/>
+            <Image style={{width:100, height:150, alignSelf:'center',borderRadius:10}} source={{uri:item.book_image.url}}/>
             </View>
             <View style={{flex:2, paddingLeft:10}}>
-            <Text variant='titleMedium' style={{textAlign:'justify'}}>{BooksStore.GetBookDetails(item).title}</Text>
-            <Text variant='labelSmall'>{BooksStore.GetBookDetails(item).main_author}</Text>
+            <Text variant='titleMedium' style={{textAlign:'justify'}}>{item.title}</Text>
+            <Text variant='labelSmall'>{BooksStore.GetBookDetails(item._id).main_author}</Text>
             </View>
             </Card.Content>
             <Card.Actions>
@@ -96,7 +97,7 @@ const Cartpage = observer(() => {
             mode='elevated'
             buttonColor='darkred'
             textColor='white'
-            onPress={() => {alert("Book Removed from Cart"),BorrowStore.cancelbook(item,BooksStore)}}
+            onPress={() => BorrowStore.cancelbook(item,BooksStore)}
             >REMOVE</Button>
             </Card.Actions>
             </Card>

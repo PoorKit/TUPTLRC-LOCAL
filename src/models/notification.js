@@ -22,9 +22,12 @@ const Notifications = types
     success: types.optional(types.boolean, false),
 })
 .actions(self => ({
-    fetchCurrentNotifications: flow(function*(userID) {
+    fetchCurrentNotifications: flow(function*() {
         try {
-            applySnapshot(self, yield fetchNotifications(userID));
+            const data = yield fetchNotifications();
+            if(data){
+                applySnapshot(self, data);
+            }
         } catch (err) {
             console.error(err);
         }
@@ -32,7 +35,11 @@ const Notifications = types
     seenNotification(notificationID) {
         self.notifications.find(notification => notification._id === notificationID).deliveryStatus = 'Seen';
         alert("Notification has been marked as seen");
-    }
+    },
+    // Create a function that would empty out/ set the notifications null
+    emptyout: flow(function*() {
+        applySnapshot(self, { notifications: [], success: false });
+    })
 }))
 .views(self => ({
     // Modify this to be Today vs Previous Notifications using dayjs

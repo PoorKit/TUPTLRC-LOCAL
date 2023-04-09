@@ -1,6 +1,5 @@
 import { types, applySnapshot } from 'mobx-state-tree';
 import { createContext } from "react";
-import { updateUserInformation } from '../services/api';
 
 const User = types
 .model('User', {
@@ -55,14 +54,13 @@ const User = types
             applySnapshot(self, {});
         },
         setnotification(pushtoken){
-            if(self.notification === undefined){
+            if(self.notification === null){
                 self.notification = {
                     pushToken: pushtoken
                 }
             }else{
                 self.notification.pushToken = pushtoken;
             }
-            
         },
         setcourse(newcourse){
             newcourse.forEach(element => {

@@ -11,6 +11,7 @@ const base_axios_config = {
 
 export const updateUserInformation = async(userid,updatedparams) => {
     try{
+        console.log(updatedparams);
         // This works and takes into account only what parameters are updated
         const response = await axios.put(constants.base_full_url + "/profile/update/"+userid, updatedparams, base_axios_config);
         if(response.data.success){
@@ -89,18 +90,18 @@ export const SeenNotification = async(notificationid) => {
         console.log(error);
     }
 }
-export const fetchNotifications = async(userID) => {
+export const fetchNotifications = async() => {
     try{
-        const response = await axios.post(constants.base_full_url+'/notification/all',{userid: userID},base_axios_config);
+        const response = await axios.get(constants.base_full_url+'/notification', base_axios_config);
         return response.data;
     }catch(error){
         console.log(error);
     }
 }
 
-export const FetchPenalty = async(userID) => {
+export const FetchPenalty = async() => {
     try{
-        const response = await axios.post(constants.base_full_url+'/penalty',{userid: userID},base_axios_config);
+        const response = await axios.get(constants.base_full_url+'/profile/penalty', null, base_axios_config);
         return response.data;
     }catch(error){
         console.log(error);
@@ -109,8 +110,17 @@ export const FetchPenalty = async(userID) => {
 
 export const fetchBorrow = async(userID) => {
     try{
-        const response = await axios.post(constants.base_full_url+'/book/myrequests', {userId: userID}, base_axios_config);
-        return response.data.requests;
+        const response = await axios.get(constants.base_full_url+'/borrow/request', base_axios_config);
+        return response.data.studentborrowbook;
+    }catch(error){
+        console.log(error);
+    }
+}
+
+export const fetchLatestBorrow = async() => {
+    try{
+        const response = await axios.get(constants.base_full_url+'/borrow/books', base_axios_config);
+        return response.data.studentappointmentbook;
     }catch(error){
         console.log(error);
     }
@@ -151,8 +161,8 @@ export const confirmRequest = async(userID,appointmentDate,dueDate) => {
 
 export const fetchBooks = async() => {
     try{
-        const response = await axios.get(constants.base_full_url+"/admin/books", base_axios_config);
-        const books = response.data.book.map(book => {
+        const response = await axios.post(constants.base_full_url+"/books", base_axios_config);
+        const books = response.data.studentbook.map(book => {
             const convertedBook = {...book}; // create a copy of the book object
             convertedBook.Fil = convertedBook.Fil === true || convertedBook.Fil === "1";
             convertedBook.Ref = convertedBook.Ref === true || convertedBook.Ref === "1";
@@ -161,7 +171,11 @@ export const fetchBooks = async() => {
             convertedBook.Res = convertedBook.Res === true || convertedBook.Res === "1";
             return convertedBook;
             });
-        return books;
+        const data = {
+            books,
+            bookSubjects: response.data.bookSubjects
+            };
+        return data;
     }catch(error){
         console.log(error);
     }
@@ -169,10 +183,11 @@ export const fetchBooks = async() => {
 
 export const loginasync = async(email,password) => {
     try{
-        const response = await axios.post(constants.base_full_url+"login",{email,password});
+        const response = await axios.post(constants.base_full_url+"/login",{email,password});
         return response.data;
     }catch(error){
-        console.log(error);
+        const response = {success: false, message: error.response.data.message};
+        return response;
     }
 }
 export const googleloginasync = async(currentUser) => {

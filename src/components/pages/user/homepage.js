@@ -1,38 +1,37 @@
 import React, { useContext } from 'react';
 import { ImageBackground, StyleSheet, View, FlatList } from 'react-native';
-import { Text, Card, Button, IconButton } from 'react-native-paper';
+import { Text, Card, Chip, Portal } from 'react-native-paper';
 
 import { observer } from 'mobx-react-lite';
 import BooksContext from '../../../models/books';
 import { useNavigation } from '@react-navigation/native';
+import { book_image_default } from '../../../services/constants';
+import Loading from '../loading';
 
 export default Homepage = observer(() => {
     const navigation = useNavigation();
     const BooksStore = useContext(BooksContext);
-    const LatestBooks = BooksStore.Books.slice().sort((a, b) => new Date(b.date_updated) - new Date(a.date_updated));
-    const GenreCollection = [
-        {id:'Fil',name:'Filipino',icon:'camera'},
-        {id:'Ref',name:'Reference',icon:'card-text'},
-        {id:'Bio',name:'Biology',icon:'leaf'},
-        {id:'Fic',name:'Fiction',icon:'book'},
-        {id:'Res',name:'Resource',icon:'cloud'},
-    ]
+    const LatestBooks = BooksStore.AllBooks.slice(0, 5); // Limit to 5 latest entries
+    const GenreCollection = BooksStore.AllSubjects;
     return (
         <>
+        <Portal>
+            <Loading/>
+        </Portal>
         <ImageBackground style={styles.imagebackground} source={require('../../../../assets/hexBg.jpg')} resizeMode="cover">
             <View style={styles.container}>
                 {/* Latest View */}
-                <View style={{flex:2}}>
+                <View style={{flex:3}}>
                     <View style={styles.headerlist}>
                         <Text variant="titleLarge" style={{color:'white',fontWeight:'400'}}>Latest Books</Text>
-                        <Text variant="titleSmall" style={{color:'white', fontWeight:'bold'}}>View More</Text>
+                        <Text variant="titleSmall" style={{color:'white', fontWeight:'bold'}} onPress={()=>(navigation.navigate('Book'))}>View More</Text>
                     </View>
                     <FlatList
                         data = {LatestBooks}
                         horizontal={true}
                         renderItem = {({item}) => (
                             <Card key={item._id} style={styles.card} onPress={()=>navigation.navigate("Details",item._id)}>
-                                <Card.Cover source={{uri: item.book_image.url}} style={styles.cardcover}/>
+                            <Card.Cover source={{uri: item.book_image?.url || book_image_default}} style={styles.cardcover}/>
                             </Card>
                         )}
                     />
@@ -42,27 +41,37 @@ export default Homepage = observer(() => {
                     <View style={styles.headerlist}>
                         <Text variant="titleLarge" style={{color:'white',fontWeight:'400'}}>Genres</Text>
                     </View>
-                    <View style={{flexDirection:'row'}}>
-                        <View style={{flex:1}}>
+                        <View style={{flex:1, flexDirection:'row', margin:10}}>
                             <FlatList
                                 data = {GenreCollection}
                                 horizontal={true}
+                                keyExtractor={(item, index) => index.toString()}
                                 renderItem = {({item}) => (
                                     <View key={item.id}>
-                                        <IconButton 
-                                        icon={item.icon}
-                                        size={48}
-                                        mode='outlined'
-                                        iconColor='white'
-                                        // onPress={()=>BooksStore.setCurrentBook(item)}
-                                        />
-                                        <Text style={{color:'white', alignSelf:'center'}}>{item.name}</Text>
+                                        <Chip
+                                        style={{
+                                            margin:1,
+                                            marginBottom: 5,
+                                            padding:2,
+                                            minHeight:40,
+                                            maxHeight:40,
+                                            alignSelf:'center',
+                                            backgroundColor:'lightsalmon',
+                                        }}
+                                        mode='flat'
+                                        compact={true}
+                                        selectedColor='maroon'
+                                        textStyle={{color:'white'}}
+                                        onPress={() => {
+                                            navigation.navigate("Book", {tag: item});
+                                        }}
+                                        >
+                                        {item}
+                                        </Chip>
                                     </View>
                                 )}
                             />
-                        </View>
                     </View>
-                
                 </View>
             </View>
         </ImageBackground>
