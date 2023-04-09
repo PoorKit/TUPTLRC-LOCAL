@@ -1,0 +1,5 @@
+Install all dependencies through npm install or yard add
+
+run cmd on terminal: npx expo start --dev-client
+
+follow the expo procedures on how to run the client
