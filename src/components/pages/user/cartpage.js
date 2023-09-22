@@ -59,9 +59,12 @@ const Cartpage = observer(() => {
                 value:"btn1",
                 icon:"check",
                 label:"Confirm",
-                onPress: ()=>{if (validdate !== null) {
-                    BorrowStore.setschedule(validdate),setDatepickerVisibility(false)
-                }else{ alert("Not a valid date has been picked!") }},
+                onPress: ()=>{validdate !== null ?
+                    (BorrowStore.setschedule(validdate),
+                    setDatepickerVisibility(false))
+                    : 
+                    alert("Not a valid date has been picked!")
+                    },
             },
             {
                 value:"btn2",

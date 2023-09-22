@@ -13,6 +13,7 @@ import { registerNotification, unregisterNotification, updateUserInformation, up
 import Loading from '../loading';
 import AuthContext from '../../../models/auth';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default Settings = observer(() => {
     const UserStore = useContext(UserContext);
@@ -113,13 +114,14 @@ export default Settings = observer(() => {
         AuthStore.donewithload();
     }
     
-    function deactivateaccount(){
+    async function deactivateaccount(){
         AuthStore.letmeload();
         try{
             alert("Are you sure you want to deactivate your account?");
             const response = deactivateaccount(UserStore.currentuser._id);
             if(response.data.success){
                 alert("Deactivated Successfully");
+                await AsyncStorage.clear();
                 AuthStore.logout();
             }else{
                 console.log(response.error);

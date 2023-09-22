@@ -77,12 +77,15 @@ const Borrows = types
     setschedule(appointmentDate){
         self.appointmentDate = dayjs(appointmentDate).toDate();
         self.dueDate = dayjs(appointmentDate).add(1, 'day').toDate();
-        this.setconfirm();
+        this.setconfirm({appointmentDate: self.appointmentDate, dueDate: self.dueDate});
     },
-    async setconfirm(){
+    async setconfirm(dates){
         self.status = "Pending";
         try{
-            const response = await confirmRequest(self.userId,self.appointmentDate,self.dueDate);
+            const response = await confirmRequest(self.userId, dates.appointmentDate, dates.dueDate);
+            if(response.success){
+                alert("Request Confirmed, Wait for Approval");
+            }
         }catch(error){
             console.log(error);
         }

@@ -52,6 +52,7 @@ export default Login = observer(() => {
                         NotificationsStore.fetchCurrentNotifications(UserStore.currentuser._id);
                         BorrowStore.fetchBorrows(UserStore.currentuser._id);
                         BooksStore.fetchBooksModel();
+                        await AsyncStorage.setItem("Token", response.token);
                         AuthStore.loggedin(response.token);
                         alert("You have successfully logged in!");
                         break;
@@ -59,11 +60,13 @@ export default Login = observer(() => {
             }catch(err){
                 setemailinputerror(!emailinputerror);
                 setpasswordinputerror(!passwordinputerror);
-                alert("Invalid Credentials")
+                alert("Invalid Credentials");
+                AuthStore.donewithload();
                 console.log(err);
             }
         }
     }
+
     checkUserData();
 
     const navigation = useNavigation();
@@ -88,6 +91,7 @@ export default Login = observer(() => {
                     NotificationsStore.fetchCurrentNotifications(UserStore.currentuser._id);
                     BorrowStore.fetchBorrows(UserStore.currentuser._id);
                     BooksStore.fetchBooksModel();
+                    await AsyncStorage.setItem("Token", response.token);
                     AuthStore.loggedin(response.token);
                     alert("You have successfully logged in!");
                     break;
@@ -95,7 +99,8 @@ export default Login = observer(() => {
         }catch(err){
             setemailinputerror(!emailinputerror);
             setpasswordinputerror(!passwordinputerror);
-            alert("Invalid Credentials")
+            alert("Invalid Credentials");
+            AuthStore.donewithload();
             console.log(err);
         }
     }
@@ -111,7 +116,6 @@ export default Login = observer(() => {
             const { id_token } = response.params;
             const auth = getAuth(firebase);
             const credential = GoogleAuthProvider.credential(id_token);
-            callgooglelogin();
             async function callgooglelogin(){
                 try{
                     const currentuser = await signInWithCredential(auth, credential);
@@ -137,6 +141,7 @@ export default Login = observer(() => {
                                 NotificationsStore.fetchCurrentNotifications(UserStore.currentuser._id);
                                 BorrowStore.fetchBorrows(UserStore.currentuser._id);
                                 BooksStore.fetchBooksModel();
+                                await AsyncStorage.setItem("Token", id_token);
                                 AuthStore.loggedin(id_token);
                                 alert("Login Successful!");
                                 break;
@@ -145,11 +150,15 @@ export default Login = observer(() => {
                         alert(serverresponse.message);
                     }
                 }catch(error){
+                    alert("An Error has Occurred Try Again Later.")
+                    AuthStore.donewithload();
                     console.log(error);
                 }
             }
+            callgooglelogin();
         }else{
             AuthStore.donewithload();
+            alert("Email is not Valid, TUP emails are required!");
         }
     },[response]);
     
