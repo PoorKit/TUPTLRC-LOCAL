@@ -1,5 +1,3 @@
-Install all dependencies through npm install or yard add
+This App is focused on the Local Env (Dynamically Assignable URL/Endpoint)
 
-run cmd on terminal: npx expo start --dev-client
-
-follow the expo procedures on how to run the client
+Done through a Modal PopUp on App Start Asking for an Endpoint to be inputted.
