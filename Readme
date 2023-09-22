@@ -1,3 +1,9 @@
 This App is focused on the Local Env (Dynamically Assignable URL/Endpoint)
 
 Done through a Modal PopUp on App Start Asking for an Endpoint to be inputted.
+
+Files to be concerned with:
+
+App.js
+Src/Services/Api.js
+Src/Services/Url_modal.js
